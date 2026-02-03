@@ -43,7 +43,7 @@ Per utilizzare questa CLI, è necessario avere:
 
 ## Tabella di Complessità e Stime
 
-### Solo Frontend — Deluge & Client Script (Zoho CRM)
+### Solo Frontend — Deluge & Client Script (Su piattaforma Zoho)
 
 | Complessità | Minimo (Ore) | Minimo (Giornate) | Ambito Applicativo                                                                            |
 | ----------- | ------------ | ----------------- | --------------------------------------------------------------------------------------------- |
@@ -86,17 +86,24 @@ Per utilizzare questa CLI, è necessario avere:
 | Molto Alta  | **400 h**    | 50 g              | Architettura complessa, performance, sicurezza        |
 | Estrema     | **480 h**    | 60 g              | Portali enterprise, microservizi, compliance rigorosa |
 
-#### Note di Interpretazione (da usare nel documento)
+#### Note di Interpretazione
 
 Gli esempi tra parentesi sono indicativi, non cumulativi
+
 Ogni opzione selezionata oltre la prima comporta incremento di giornate
+
 Le soglie rappresentano minimi di ingaggio, non stime definitive
 
 #### Regole di Calcolo Applicative
 
 Setup progetto: max 1h
+
 Deploy & supporto finale: max 1h
+
 Testing: max 20% (incluso, non aggiuntivo)
+
 Buffer imprevisti: 20% incluso
+
 Richieste di modifica: 10% incluso
+
 Se la somma dei task < soglia → riallocare ore su Business Logic e Testing
