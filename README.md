@@ -31,31 +31,12 @@ Per utilizzare questa CLI, è necessario avere:
     npm install
     ```
 
-3. **Impostare le Variabili d'Ambiente (Chiave API e Modello Gemini)**:
-    È **obbligatorio** impostare la propria chiave API di Gemini (`GEMINI_API_KEY`) e specificare il modello Gemini da utilizzare (`GEMINI_MODEL`) come variabili d'ambiente. Senza di esse, lo script non potrà funzionare.
-
-    Su Linux o macOS:
-
-    ```bash
-    export GEMINI_API_KEY="LA_TUA_CHIAVE_API"
-    export GEMINI_MODEL="gemini-pro" # o "gemini-1.5-flash", "gemini-1.5-pro", ecc.
-    ```
-
-    Su Windows (in PowerShell):
-
-    ```powershell
-    $env:GEMINI_API_KEY="LA_TUA_CHIAVE_API"
-    $env:GEMINI_MODEL="gemini-pro" # o "gemini-1.5-flash", "gemini-1.5-pro", ecc.
-    ```
-
-    > **Nota**: Sostituire `"LA_TUA_CHIAVE_API"` con la chiave API effettiva e `"gemini-pro"` con il modello desiderato. Queste variabili d'ambiente sono valide solo per la sessione corrente del terminale. Per renderle permanenti, è necessario aggiungerle al profilo della propria shell (es. `.bashrc`, `.zshrc`).
-
-4. **Avviare la CLI**:
+3. **Avviare la CLI**:
     Una volta impostate le variabili d'ambiente, eseguire il seguente comando per avviare il processo interattivo:
 
     ```bash
-    npm start
+    npm run build && npm start
     ```
 
-5. **Seguire le istruzioni**:
-    La CLI porrà una serie di domande. Per la selezione dello stack tecnologico, ora è possibile scegliere tra un elenco più ampio di opzioni (anche selezionando più elementi). Rispondere a ciascuna domanda. Per la descrizione dei requisiti, si aprirà un editor di testo predefinito per un inserimento più comodo. Al termine, il file di stima verrà generato nella directory principale.
+4. **Seguire le istruzioni**:
+    La CLI porrà una serie di domande. Per la selezione dello stack tecnologico, ora è possibile scegliere tra un elenco più ampio di opzioni (anche selezionando più elementi). Rispondere a ciascuna domanda. Al termine, il file di stima ".md" verrà generato nella directory principale.
