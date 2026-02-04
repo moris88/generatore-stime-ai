@@ -301,3 +301,11 @@ export const geminiModels = [
 	'gemini-3-flash',
 	'gemini-3-pro',
 ];
+
+export const chatgptModels = [
+	'gpt-4o',
+	'gpt-4o-mini',
+	'gpt-5.2-pro',
+	'gpt-5.2-instant',
+	'gpt-5-mini',
+];

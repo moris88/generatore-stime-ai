@@ -84,13 +84,14 @@ Assegna ore stimate a ciascun task basandoti sulla tua esperienza e sulle best p
 Se il calcolo dei singoli task risulta inferiore alla soglia minima individuata,
 distribuisci le ore mancanti proporzionalmente sui task di Business Logic e Testing
 fino al raggiungimento del minimo richiesto (NON indicarlo nel documento finale).
+Restituisci sempre le ore in numeri interi arrotondando per difetto (non specificarlo nel documento).
 
 Vincoli Temporali Mandatori:
 - Setup Progetto: Massimo 1 ora.
 - Deploy & Supporto Finale: Massimo 1 ora.
 - Testing: Massimo 20% del totale ore (incluso nel calcolo complessivo, non aggiuntivo).
 - Buffer Imprevisti: Aggiungi un buffer del 20% sul totale ore (incluso nel calcolo complessivo, non aggiuntivo).
-- Aggiungi un 10% di ore per eventuali richieste di modifica (incluso nel calcolo complessivo, non aggiuntivo).
+- Aggiungi un 5% di ore per eventuali richieste di modifica (incluso nel calcolo complessivo, non aggiuntivo).
 
 Istruzioni di Output:
 Genera un documento in formato Markdown con questa struttura:

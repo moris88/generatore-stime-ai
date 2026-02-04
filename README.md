@@ -1,45 +1,45 @@
-# Generatore di Stime di Progetto con AI
+# CLI per la Stima di Progetti Gemini
 
-Questo è un tool a linea di comando (CLI) che utilizza l'intelligenza artificiale di Google Gemini per generare stime di progetto professionali in formato Markdown.
+Questo è un tool da riga di comando (CLI) progettato per semplificare il processo di generazione di stime professionali di progetto in formato Markdown, sfruttando la potenza dell'intelligenza artificiale di Google Gemini.
 
-## Scopo del Progetto
+## Panoramica del Progetto
 
-Lo scopo di questa CLI è di standardizzare e accelerare il processo di stima dei progetti software. Raccogliendo input strutturati (cliente, stack, ambito, requisiti), il tool produce un documento di stima coerente e dettagliato, basato su un prompt ingegnerizzato per un Senior Software Architect.
+L'obiettivo principale di questa CLI è standardizzare e accelerare la stima dei progetti software. Raccogliendo input strutturati (cliente, stack tecnologico, ambito, requisiti), il tool genera documenti di stima coerenti e dettagliati basati su un prompt meticolosamente ingegnerizzato per un Senior Software Architect.
 
-## Funzionamento
+## Come Funziona
 
-Il tool è stato sviluppato in **TypeScript** e si basa su un'architettura modulare:
+Sviluppato in **TypeScript**, il tool presenta un'architettura modulare:
 
-- **`src/index.ts`**: È il punto di ingresso dell'applicazione. Utilizza la libreria `inquirer` per creare un'interfaccia interattiva che guida l'utente nella raccolta delle informazioni necessarie.
-- **`src/gemini.ts`**: Questo modulo contiene la logica per comunicare con l'API di Google Gemini. Prepara il prompt con i dati forniti dall'utente e restituisce la stima generata dall'AI.
-- **File di output**: La stima finale viene salvata come file `.md` nella directory principale del progetto.
+- **`src/index.ts`**: Punto di ingresso dell'applicazione, utilizza la libreria `inquirer` per creare un'interfaccia interattiva che raccoglie le informazioni necessarie per il progetto dall'utente.
+- **`src/gemini.ts`**: Questo modulo gestisce la comunicazione con l'API di Google Gemini. Costruisce il prompt AI utilizzando i dati forniti dall'utente ed elabora la stima generata.
+- **File di Output**: La stima finale del progetto viene salvata come file `.md` nella directory radice del progetto.
 
 ## Prerequisiti
 
-Per utilizzare questa CLI, è necessario avere:
+Per utilizzare questa CLI, assicurati di avere:
 
 1. **Node.js** installato (versione 18 o superiore consigliata).
-2. Una **chiave API di Google Gemini**.
+2. Una **Chiave API di Google Gemini**.
 
-## Come Avviare il Tool
+## Guida Rapida
 
-1. **Clonare o scaricare il progetto** e navigare nella sua directory.
+1. **Clona o scarica il progetto** e naviga nella sua directory.
 
-2. **Installare le dipendenze** con npm:
+2. **Installa le dipendenze** usando npm:
 
     ```bash
     npm install
     ```
 
-3. **Avviare la CLI**:
-    Una volta impostate le variabili d'ambiente, eseguire il seguente comando per avviare il processo interattivo:
+3. **Avvia la CLI**:
+    Dopo aver configurato le variabili d'ambiente (es. la tua chiave API Gemini), esegui il seguente comando per avviare il processo interattivo:
 
     ```bash
     npm run build && npm start
     ```
 
-4. **Seguire le istruzioni**:
-    La CLI porrà una serie di domande. Per la selezione dello stack tecnologico, ora è possibile scegliere tra un elenco più ampio di opzioni (anche selezionando più elementi). Rispondere a ciascuna domanda. Al termine, il file di stima ".md" verrà generato nella directory principale.
+4. **Segui le Istruzioni**:
+    La CLI ti guiderà attraverso una serie di domande. Per la selezione dello stack tecnologico, ora puoi scegliere da un elenco più ampio di opzioni, incluse selezioni multiple. Fornisci le risposte a ciascun prompt. Al completamento, il tuo file di stima `.md` verrà generato nella directory radice del progetto.
 
 ## Tabella di Complessità e Stime
 
