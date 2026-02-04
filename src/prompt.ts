@@ -1,18 +1,19 @@
 export function createPrompt(
-  techStack: string,
-  scope: "Frontend" | "Backend" | "Full-stack",
-  requirements: string,
-  notes: string, // Nuovo parametro per le note aggiuntive
-  summarizedHistoricalContext: string[] // Nuovo parametro per il contesto storico RIASSUNTO
+	techStack: string,
+	scope: 'Frontend' | 'Backend' | 'Full-stack',
+	requirements: string,
+	notes: string, // Nuovo parametro per le note aggiuntive
+	summarizedHistoricalContext: string[], // Nuovo parametro per il contesto storico RIASSUNTO
 ): string {
-  const historicalSection = summarizedHistoricalContext.length > 0
-    ? `Sintesi delle Stime Storiche Rilevanti (per riferimento):
+	const historicalSection =
+		summarizedHistoricalContext.length > 0
+			? `Sintesi delle Stime Storiche Rilevanti (per riferimento):
 ${summarizedHistoricalContext.map((summary, index) => `### Sintesi Stima Storica ${index + 1}\n${summary}`).join('\n---\n')}\n
 Usa queste sintesi delle stime storiche come esempi per calibrare e migliorare l'accuratezza della nuova stima, ma non copiarle direttamente. Analizza la struttura, il livello di dettaglio e le ore stimate per tipi di task simili da queste sintesi.
 `
-    : '';
+			: '';
 
-  return `
+	return `
 Ruolo: Agisci come un Senior Software Architect. Il tuo compito è generare un documento di stima professionale per un progetto basato su ${techStack} (${scope}).
 
 ${historicalSection}
@@ -107,16 +108,18 @@ Dati del Progetto da stimare (requisiti funzionali e tecnici):
 ${requirements}
 
 ${
-  notes
-    ? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
+	notes
+		? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
 ${notes}`
-    : ""
+		: ''
 }
 `;
 }
 
-export function createHistoricalEstimatesPrompt(historicalEstimates: string[]): string {
-  return `
+export function createHistoricalEstimatesPrompt(
+	historicalEstimates: string[],
+): string {
+	return `
 Riassumi le seguenti stime di progetto in modo conciso, mantenendo solo le informazioni essenziali per l'analisi comparativa. Per ogni stima, estrai:
 - Obiettivo del Progetto (evidenzia il valore di business)
 - Classificazione (Frontend, Backend, Full-stack e complessità)
