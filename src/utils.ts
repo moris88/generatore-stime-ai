@@ -17,35 +17,57 @@ export interface UserInputs {
 	chatgptModel?: string; // Modello ChatGPT (opzionale)
 }
 
-// Funzione per leggere le stime storiche presenti nella directory corrente
+// Interfaccia per la cronologia delle stime nel file JSON
+export interface EstimateHistory {
+	clientName: string;
+	date: string;
+	stack: string;
+	scope: string;
+	hours: string;
+	days: string;
+	objective: string;
+	fullSummary: string;
+}
+
+const HISTORY_FILE = path.join(process.cwd(), 'stima_history.json');
+
+// Funzione per salvare una nuova stima nella cronologia JSON
+export async function saveToHistory(entry: EstimateHistory) {
+	let history: EstimateHistory[] = [];
+	try {
+		const data = await fs.readFile(HISTORY_FILE, 'utf8');
+		history = JSON.parse(data);
+	} catch (_error) {
+		// Se il file non esiste, iniziamo con un array vuoto
+	}
+
+	history.push(entry);
+
+	await fs.writeFile(HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
+}
+
+// Funzione per leggere le stime storiche presenti nel file JSON (esclusivo)
 export async function readHistoricalEstimates(
 	scope: 'Frontend' | 'Backend' | 'Full-stack',
 ): Promise<string[]> {
-	const historicalEstimates: string[] = [];
+	// Preleva esclusivamente dallo storico JSON generato alla fine di ogni stima
 	try {
-		const pathDir = path.join(__dirname, scope.toLowerCase());
-		if (!(await fs.stat(pathDir).catch(() => null))) {
-			return historicalEstimates; // Se la cartella non esiste, ritorna l'array vuoto
-		}
-		const files = await fs.readdir(pathDir); // Leggi i file nella directory corrente
-		const estimateFiles = files.filter(
-			(file) => file.startsWith('stima_') && file.endsWith('.md'),
-		);
-
-		for (const file of estimateFiles) {
-			const content = await fs.readFile(path.join(pathDir, file), {
-				encoding: 'utf8',
-			});
-			historicalEstimates.push(content);
-		}
-	} catch (error) {
-		// Se non riesce a leggere le stime storiche, lo segnala ma non blocca l'esecuzione
-		console.warn(
-			'[ATTENZIONE] Impossibile leggere alcune stime storiche (potrebbe essere dovuto a permessi o assenza di file):',
-			error,
-		);
+		const data = await fs.readFile(HISTORY_FILE, 'utf8');
+		const history: EstimateHistory[] = JSON.parse(data);
+		return history
+			.filter((entry) => entry.scope === scope)
+			.map((entry) => entry.fullSummary);
+	} catch (_error) {
+		return [];
 	}
-	return historicalEstimates;
+}
+
+// Funzione per pulire una stringa JSON che potrebbe contenere blocchi di codice Markdown
+export function cleanJsonString(jsonString: string): string {
+	return jsonString
+		.replace(/```json\n?/g, '') // Rimuove l'apertura ```json
+		.replace(/```\n?/g, '') // Rimuove la chiusura ```
+		.trim();
 }
 
 // Funzione per raccogliere gli input dall'utente

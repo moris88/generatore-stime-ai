@@ -3,6 +3,11 @@
 /.env
 /.npmrc
 
+stima_*.md
+stima_history.json
+
 /frontend
 /backend
 /full-stack
+
+GEMINI.md

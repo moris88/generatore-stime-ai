@@ -14,7 +14,7 @@ Usa queste sintesi delle stime storiche come esempi per calibrare e migliorare l
 			: '';
 
 	return `
-Ruolo: Agisci come un Senior Software Architect. Il tuo compito è generare un documento di stima professionale per un progetto basato su ${techStack} (${scope}).
+Ruolo: Agisci come un Senior Software Architect. Il tuo compito è generare un documento di stima professionale per un progetto basato su ${techStack} (${scope}). Non uscire mai dallo stack e scope indicati (se ti viene indicato frontend, non includere logica backend e viceversa, inoltre se ti vengono indicati delle tecnologie da utilizzare, non aggiungere altre tecnologie non menzionate, e soprattutto non modificarle).
 
 ${historicalSection}
 Soglie Minime di Ingaggio (Base di Partenza):
@@ -75,7 +75,7 @@ Applica rigorosamente una delle seguenti soglie minime (1 giornata = 8h).
   - Complessità Estrema: Minimo 60 giornate (480 ore)
     (portali web complessi, CMS personalizzati, frontend con complessità alta, backend con microservizi, database complessi, integrazioni critiche, requisiti di sicurezza e compliance rigorosi)
 
-Nota Importante: 
+Nota Importante:
 Nelle parentesi, per ogni ambito, sono forniti esempi indicativi (opzioni) per aiutarti a classificare correttamente la complessità del progetto, ovviamente vale una opzione tra quelle elencate, non una somma di più opzioni, per questo caso vanno aumentate le giornate per ogni opzione selezionata in base alla complessità e al caso specifico.
 
 Calcolo delle Ore:
@@ -85,10 +85,11 @@ Se il calcolo dei singoli task risulta inferiore alla soglia minima individuata,
 distribuisci le ore mancanti proporzionalmente sui task di Business Logic e Testing
 fino al raggiungimento del minimo richiesto (NON indicarlo nel documento finale).
 Restituisci sempre le ore in numeri interi arrotondando per difetto (non specificarlo nel documento).
+Tieniti sempre in un range di giornate coerente con la complessità individuata, anche dopo aver distribuito le ore mancanti, esempio se la stima è 43 gg allora scrivi tra le 40 e le 46 gg, poi sarà lo sviluppatore a ottimizzare e ridurre e/o aumentare le ore di sviluppo, ma non deve partire da una stima troppo bassa che non rispecchia la complessità del progetto.
 
 Vincoli Temporali Mandatori:
-- Setup Progetto: Massimo 1 ora.
-- Deploy & Supporto Finale: Massimo 1 ora.
+- Setup Progetto: Massimo 1 ora, solo e soltanto se fosse necessario per via della complessità estrema del progetto aumentale come ritieni opportuno.
+- Deploy & Supporto Finale: Massimo 1 ora, solo e soltanto se fosse necessario per via della complessità estrema del progetto aumentale come ritieni opportuno.
 - Testing: Massimo 20% del totale ore (incluso nel calcolo complessivo, non aggiuntivo).
 - Buffer Imprevisti: Aggiungi un buffer del 20% sul totale ore (incluso nel calcolo complessivo, non aggiuntivo).
 - Aggiungi un 5% di ore per eventuali richieste di modifica (incluso nel calcolo complessivo, non aggiuntivo).
@@ -99,7 +100,7 @@ Genera un documento in formato Markdown con questa struttura:
 - Classificazione Progetto: Specifica se stimato come Frontend, Backend o Full-stack e indica il livello di complessità e il minimo di giornate applicato.
 - Funzionalità Principali: Elenco task tecnici.
 - Stima Effort (Tabella):
-  - Elenco task in ore (rispettando le soglie minime applicate).
+  - Elenco task (solo macro attività) in ore (rispettando le soglie minime applicate).
   - Riga "Buffer Imprevisti (20%)".
   - Totale Complessivo: Ore e Giornate (Totale Ore / 8).
 - Vincoli e Assunzioni: Limiti tecnici (solo quelli rilevanti) e prerequisiti.
@@ -109,25 +110,28 @@ Dati del Progetto da stimare (requisiti funzionali e tecnici):
 ${requirements}
 
 ${
-	notes
-		? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
+  notes
+    ? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
 ${notes}`
-		: ''
+    : ""
 }
 `;
 }
 
-export function createHistoricalEstimatesPrompt(
-	historicalEstimates: string[],
-): string {
+export function createSingleEstimateSummaryPrompt(estimate: string): string {
 	return `
-Riassumi le seguenti stime di progetto in modo conciso, mantenendo solo le informazioni essenziali per l'analisi comparativa. Per ogni stima, estrai:
-- Obiettivo del Progetto (evidenzia il valore di business)
-- Classificazione (Frontend, Backend, Full-stack e complessità)
-- Funzionalità Principali (elenco dei task tecnici)
-- Stima Effort (in ore e giornate)
+Analizza la seguente stima di progetto in formato Markdown e forniscine un riassunto estremamente conciso.
+RESTITUISCI ESCLUSIVAMENTE UN OGGETTO JSON con questa struttura, senza markdown code blocks (es. no \`\`\`json):
 
-Ecco le stime da riassumere:
-${historicalEstimates.map((estimate, index) => `### Stima ${index + 1}\n${estimate}`).join('\n---\n')}
+{
+  "stack": "tecnologie principali",
+  "scope": "Frontend/Backend/Full-stack",
+  "hours": "totale ore",
+  "days": "totale giornate",
+  "objective": "breve descrizione obiettivo"
+}
+
+Ecco la stima da analizzare:
+${estimate}
 `;
 }

@@ -1,39 +1,32 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createHistoricalEstimatesPrompt, createPrompt } from './prompt';
+import { createPrompt, createSingleEstimateSummaryPrompt } from './prompt';
 
-// Funzione per riassumere le stime storiche filtrate per ambito
-export async function summarizeHistoricalEstimates(
-	historicalEstimates: string[],
+// Funzione per generare un riassunto conciso di una singola stima
+export async function summarizeSingleEstimateGemini(
+	estimate: string,
 	apiKey: string,
 	modelUsed: string,
-): Promise<string[]> {
-	if (historicalEstimates.length === 0) {
-		return [];
-	}
-
+): Promise<string> {
 	const genAI = new GoogleGenerativeAI(apiKey);
 	const model = genAI.getGenerativeModel({ model: modelUsed });
 
-	const summaryPrompts = createHistoricalEstimatesPrompt(historicalEstimates);
+	const prompt = createSingleEstimateSummaryPrompt(estimate);
 
-	const summaries: string[] = [];
 	try {
-		const result = await model.generateContent(summaryPrompts);
+		const result = await model.generateContent(prompt);
 		const response = result.response;
-		summaries.push(response.text().trim());
+		return response.text().trim();
 	} catch (error) {
 		console.error(
-			'Errore durante la generazione del riassunto di una stima storica:',
+			'Errore durante la generazione del riassunto della stima:',
 			error,
 		);
-		// Continua anche se un riassunto fallisce
+		throw error;
 	}
-
-	return summaries;
 }
 
 // Funzione per generare la stima utilizzando il modello Gemini
-export async function generateEstimate(
+export async function generateEstimateGemini(
 	techStack: string,
 	scope: 'Frontend' | 'Backend' | 'Full-stack',
 	requirements: string,
