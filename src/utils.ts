@@ -1,7 +1,12 @@
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
 import inquirer from 'inquirer';
-import { chatgptModels, geminiModels, scopes, techStack } from './constants';
+import {
+	anthropicModels,
+	chatgptModels,
+	geminiModels,
+	scopes,
+	techStack,
+} from './constants';
+import { getAllEstimates, getHistoricalEstimates, saveEstimate } from './db';
 
 // Interfaccia per definire la struttura dei dati raccolti
 export interface UserInputs {
@@ -12,12 +17,14 @@ export interface UserInputs {
 	notes: string; // Nuovo campo per le note aggiuntive
 	geminiApiKey: string; // Nuova chiave API Gemini
 	geminiModel: string; // Nuovo modello Gemini
-	llmChoice: 'gemini' | 'chatgpt'; // Scelta tra Gemini e ChatGPT
+	llmChoice: 'gemini' | 'chatgpt' | 'anthropic'; // Scelta tra Gemini, ChatGPT e Anthropic
 	chatgptApiKey?: string; // Chiave API ChatGPT (opzionale)
 	chatgptModel?: string; // Modello ChatGPT (opzionale)
+	anthropicApiKey?: string; // Chiave API Anthropic (opzionale)
+	anthropicModel?: string; // Modello Anthropic (opzionale)
 }
 
-// Interfaccia per la cronologia delle stime nel file JSON
+// Interfaccia per la cronologia delle stime
 export interface EstimateHistory {
 	clientName: string;
 	date: string;
@@ -29,36 +36,78 @@ export interface EstimateHistory {
 	fullSummary: string;
 }
 
-const HISTORY_FILE = path.join(process.cwd(), 'stima_history.json');
-
-// Funzione per salvare una nuova stima nella cronologia JSON
+// Funzione per salvare una nuova stima nella cronologia
 export async function saveToHistory(entry: EstimateHistory) {
-	let history: EstimateHistory[] = [];
-	try {
-		const data = await fs.readFile(HISTORY_FILE, 'utf8');
-		history = JSON.parse(data);
-	} catch (_error) {
-		// Se il file non esiste, iniziamo con un array vuoto
-	}
-
-	history.push(entry);
-
-	await fs.writeFile(HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
+	saveEstimate(entry);
 }
 
-// Funzione per leggere le stime storiche presenti nel file JSON (esclusivo)
+// Funzione per leggere le stime storiche presenti nel database
 export async function readHistoricalEstimates(
 	scope: 'Frontend' | 'Backend' | 'Full-stack',
 ): Promise<string[]> {
-	// Preleva esclusivamente dallo storico JSON generato alla fine di ogni stima
-	try {
-		const data = await fs.readFile(HISTORY_FILE, 'utf8');
-		const history: EstimateHistory[] = JSON.parse(data);
-		return history
-			.filter((entry) => entry.scope === scope)
-			.map((entry) => entry.fullSummary);
-	} catch (_error) {
-		return [];
+	const history = getHistoricalEstimates(scope);
+	return history.map((entry) => entry.fullSummary);
+}
+
+// Funzione per mostrare la cronologia all'utente
+export async function showHistory() {
+	const history = getAllEstimates();
+
+	if (history.length === 0) {
+		console.log('\nNessuna stima trovata nella cronologia.\n');
+		return;
+	}
+
+	console.log('\n--- Cronologia delle Stime ---');
+	for (const entry of history) {
+		console.log(`\nID: ${entry.id}`);
+		console.log(`Cliente: ${entry.clientName}`);
+		console.log(`Data: ${new Date(entry.date).toLocaleString()}`);
+		console.log(`Ambito: ${entry.scope}`);
+		console.log(`Stack: ${entry.stack}`);
+		console.log(`Sforzo: ${entry.hours} ore (${entry.days} giorni)`);
+		console.log(`Obiettivo: ${entry.objective}`);
+		console.log('------------------------------');
+	}
+
+	const { action } = await inquirer.prompt([
+		{
+			type: 'list',
+			name: 'action',
+			message: 'Cosa vuoi fare?',
+			choices: [
+				{ name: 'Torna al menu principale', value: 'back' },
+				{ name: 'Visualizza riassunto completo di una stima', value: 'view' },
+			],
+		},
+	]);
+
+	if (action === 'view') {
+		const { id } = await inquirer.prompt([
+			{
+				type: 'input',
+				name: 'id',
+				message: "Inserisci l'ID della stima da visualizzare:",
+				validate: (input) => {
+					const id = Number.parseInt(input, 10);
+					return history.some((e) => e.id === id) ? true : 'ID non valido.';
+				},
+			},
+		]);
+
+		const selected = history.find((e) => e.id === Number.parseInt(id, 10));
+		if (selected) {
+			console.log('\n--- Riassunto Completo ---');
+			console.log(selected.fullSummary);
+			console.log('\n--------------------------');
+			await inquirer.prompt([
+				{
+					type: 'input',
+					name: 'continue',
+					message: 'Premi invio per continuare...',
+				},
+			]);
+		}
 	}
 }
 
@@ -80,6 +129,7 @@ export async function gatherUserInputs(): Promise<UserInputs> {
 			choices: [
 				{ name: 'Google Gemini', value: 'gemini' },
 				{ name: 'OpenAI ChatGPT', value: 'chatgpt' },
+				{ name: 'Anthropic Claude', value: 'anthropic' },
 			],
 			default: 'gemini',
 		},
@@ -131,6 +181,31 @@ export async function gatherUserInputs(): Promise<UserInputs> {
 			when: (answers) => answers.llmChoice === 'chatgpt',
 			validate: (input) =>
 				input ? true : 'Il modello ChatGPT non può essere vuoto.',
+		},
+		{
+			type: 'password',
+			name: 'anthropicApiKey',
+			message: 'Inserisci la tua chiave API di Anthropic Claude:',
+			mask: '*',
+			when: (answers) => answers.llmChoice === 'anthropic',
+			validate: (input: string) => {
+				const apiKeyPattern = /^sk-ant-[A-Za-z0-9-_]{32,}$/;
+				if (!apiKeyPattern.test(input)) {
+					return 'Formato della chiave API non valido.';
+				}
+				return input ? true : 'La chiave API non può essere vuota.';
+			},
+		},
+		{
+			type: 'list',
+			name: 'anthropicModel',
+			message:
+				'Inserisci il modello Claude da utilizzare (es. claude-3-5-sonnet-latest):',
+			choices: anthropicModels,
+			default: 'claude-3-5-sonnet-latest',
+			when: (answers) => answers.llmChoice === 'anthropic',
+			validate: (input) =>
+				input ? true : 'Il modello Claude non può essere vuoto.',
 		},
 		{
 			type: 'input',

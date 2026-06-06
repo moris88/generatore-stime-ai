@@ -95,7 +95,10 @@ Vincoli Temporali Mandatori:
 - Aggiungi un 5% di ore per eventuali richieste di modifica (incluso nel calcolo complessivo, non aggiuntivo).
 
 Istruzioni di Output:
-Genera un documento in formato Markdown con questa struttura:
+Genera DUE SEZIONI distinte, separate da una riga con il testo "---SEPARATOR---".
+
+SEZIONE 1 (Stima):
+Documento in formato Markdown con questa struttura:
 - Obiettivo del Progetto: Sintesi del valore di business.
 - Classificazione Progetto: Specifica se stimato come Frontend, Backend o Full-stack e indica il livello di complessità e il minimo di giornate applicato.
 - Funzionalità Principali: Elenco task tecnici.
@@ -106,14 +109,20 @@ Genera un documento in formato Markdown con questa struttura:
 - Vincoli e Assunzioni: Limiti tecnici (solo quelli rilevanti) e prerequisiti.
 - Criticità e Rischi: Colli di bottiglia e rischi di integrazione (solo quelli veramente rilevanti).
 
+SEZIONE 2 (Sprints):
+Documento in formato Markdown con la pianificazione degli sprint:
+- Struttura gli sprint in base alla stima temporale (es. Sprint 1, Sprint 2, ecc.).
+- Per ogni sprint, fornisci una TODO LIST dettagliata con i task tecnici da completare.
+- Assicurati che ogni sprint abbia un obiettivo chiaro e un elenco di deliverable.
+
 Dati del Progetto da stimare (requisiti funzionali e tecnici):
 ${requirements}
 
 ${
-  notes
-    ? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
+	notes
+		? `Note Aggiuntive sul Progetto (non parte dei requisiti ma importanti da considerare):
 ${notes}`
-    : ""
+		: ''
 }
 `;
 }

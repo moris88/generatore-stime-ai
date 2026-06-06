@@ -1,13 +1,26 @@
+import { constants } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import inquirer from 'inquirer';
-import { generateEstimateGemini, summarizeSingleEstimateGemini } from './gemini';
-import { generateEstimateOpenAI, summarizeSingleEstimateOpenAI } from './openai';
+import {
+	generateEstimateAnthropic,
+	summarizeSingleEstimateAnthropic,
+} from './anthropic';
+import { migrateFromJson } from './db';
+import {
+	generateEstimateGemini,
+	summarizeSingleEstimateGemini,
+} from './gemini';
+import {
+	generateEstimateOpenAI,
+	summarizeSingleEstimateOpenAI,
+} from './openai';
 import {
 	cleanJsonString,
 	gatherUserInputs,
 	readHistoricalEstimates,
 	saveToHistory,
+	showHistory,
 	type UserInputs,
 } from './utils';
 
@@ -16,8 +29,36 @@ export async function main() {
 	console.log(
 		'Utilizza Gemini di Google Generative AI o OpenAI per creare stime accurate.\n',
 	);
-	console.log('Per uscire in qualsiasi momento, premi Ctrl+C.\n');
 
+	// Esegui migrazione se necessario
+	await migrateFromJson();
+
+	while (true) {
+		const { action } = await inquirer.prompt([
+			{
+				type: 'list',
+				name: 'action',
+				message: 'Cosa vuoi fare?',
+				choices: [
+					{ name: 'Crea una Nuova Stima', value: 'new' },
+					{ name: 'Visualizza Storico Stime (Database)', value: 'history' },
+					{ name: 'Esci', value: 'exit' },
+				],
+			},
+		]);
+
+		if (action === 'new') {
+			await createNewEstimate();
+		} else if (action === 'history') {
+			await showHistory();
+		} else {
+			console.log('Arrivederci!');
+			process.exit(0);
+		}
+	}
+}
+
+async function createNewEstimate() {
 	let answers: UserInputs;
 	let proceed = false;
 
@@ -37,7 +78,7 @@ export async function main() {
 					? `[OK] Modello Gemini selezionato: ${answers.geminiModel}`
 					: '[ERRORE] Modello Gemini mancante',
 			);
-		} else {
+		} else if (answers.llmChoice === 'chatgpt') {
 			console.log(
 				answers.chatgptApiKey
 					? '[OK] Chiave API OpenAI fornita'
@@ -47,6 +88,17 @@ export async function main() {
 				answers.chatgptModel
 					? `[OK] Modello OpenAI selezionato: ${answers.chatgptModel}`
 					: '[ERRORE] Modello OpenAI mancante',
+			);
+		} else if (answers.llmChoice === 'anthropic') {
+			console.log(
+				answers.anthropicApiKey
+					? '[OK] Chiave API Anthropic fornita'
+					: '[ERRORE] Chiave API Anthropic mancante',
+			);
+			console.log(
+				answers.anthropicModel
+					? `[OK] Modello Anthropic selezionato: ${answers.anthropicModel}`
+					: '[ERRORE] Modello Anthropic mancante',
 			);
 		}
 		console.log('-------------------------------------');
@@ -81,18 +133,48 @@ export async function main() {
 	} while (!proceed);
 
 	// Determina i parametri basati sulla scelta dell'utente
-	const isGemini = answers.llmChoice === 'gemini';
-	const apiKey = isGemini ? answers.geminiApiKey : (answers.chatgptApiKey as string);
-	const modelUsed = isGemini ? answers.geminiModel : (answers.chatgptModel as string);
-	const generateEstimate = isGemini ? generateEstimateGemini : generateEstimateOpenAI;
-	const summarizeSingleEstimate = isGemini ? summarizeSingleEstimateGemini : summarizeSingleEstimateOpenAI;
+	const choice = answers.llmChoice;
+	let apiKey: string;
+	let modelUsed: string;
+	let generateEstimate: (
+		techStack: string,
+		scope: 'Frontend' | 'Backend' | 'Full-stack',
+		requirements: string,
+		notes: string,
+		summarizedHistoricalContext: string[],
+		apiKey: string,
+		modelUsed: string,
+	) => Promise<string>;
+	let summarizeSingleEstimate: (
+		estimate: string,
+		apiKey: string,
+		modelUsed: string,
+	) => Promise<string>;
+
+	if (choice === 'gemini') {
+		apiKey = answers.geminiApiKey;
+		modelUsed = answers.geminiModel;
+		generateEstimate = generateEstimateGemini;
+		summarizeSingleEstimate = summarizeSingleEstimateGemini;
+	} else if (choice === 'chatgpt') {
+		apiKey = answers.chatgptApiKey as string;
+		modelUsed = answers.chatgptModel as string;
+		generateEstimate = generateEstimateOpenAI;
+		summarizeSingleEstimate = summarizeSingleEstimateOpenAI;
+	} else {
+		// anthropic
+		apiKey = answers.anthropicApiKey as string;
+		modelUsed = answers.anthropicModel as string;
+		generateEstimate = generateEstimateAnthropic;
+		summarizeSingleEstimate = summarizeSingleEstimateAnthropic;
+	}
 
 	// Leggi le stime storiche prima di raccogliere gli input dell'utente
 	const historicalContext = await readHistoricalEstimates(answers.scope);
 	if (historicalContext.length > 0) {
 		const n = historicalContext.length;
 		console.log(
-			`Trovat${n > 1 ? 'e' : 'a'} ${n} stim${n > 1 ? 'e' : 'a'} storiche nel file JSON. Verranno utilizzate come riferimento.`,
+			`Trovat${n > 1 ? 'e' : 'a'} ${n} stim${n > 1 ? 'e' : 'a'} storiche nel database. Verranno utilizzate come riferimento.`,
 		);
 	}
 
@@ -104,7 +186,7 @@ export async function main() {
 
 	try {
 		// Chiamata alla funzione che interroga l'AI scelta
-		const markdownOutput = await generateEstimate(
+		const fullAiOutput = await generateEstimate(
 			answers.techStack.join(', '),
 			answers.scope,
 			answers.requirements,
@@ -114,8 +196,13 @@ export async function main() {
 			modelUsed,
 		);
 
+		// Separa la stima dagli sprint
+		const parts = fullAiOutput.split('---SEPARATOR---');
+		const markdownOutput = parts[0].trim();
+		const sprintsOutput = parts[1] ? parts[1].trim() : '';
+
 		console.log(
-			`\nStima ricevuta da ${answers.llmChoice}. Generazione del riassunto per lo storico JSON...\n`,
+			`\nStima ricevuta da ${answers.llmChoice}. Generazione del riassunto per lo storico...\n`,
 		);
 
 		// Generazione del riassunto della stima appena creata
@@ -129,7 +216,7 @@ export async function main() {
 			// Pulizia della stringa JSON prima del parsing
 			const cleanedSummary = cleanJsonString(summaryJsonRaw);
 			const summaryData = JSON.parse(cleanedSummary);
-			// Salvataggio nella cronologia JSON
+			// Salvataggio nella cronologia
 			await saveToHistory({
 				clientName: answers.clientName,
 				date: new Date().toISOString(),
@@ -140,7 +227,7 @@ export async function main() {
 				objective: summaryData.objective,
 				fullSummary: cleanedSummary,
 			});
-			console.log('Riassunto salvato con successo nella cronologia JSON.');
+			console.log('Riassunto salvato con successo nel database.');
 		} catch (parseError) {
 			console.warn(
 				'[ATTENZIONE] Errore nel parsing del riassunto JSON, salvataggio come testo grezzo.',
@@ -162,29 +249,44 @@ export async function main() {
 		const safeFileName = answers.clientName
 			.replace(/[^a-z0-9]/gi, '_')
 			.toLowerCase();
-		const baseFileName = `stima_${safeFileName}`;
-		let fileName = path.join(process.cwd(), `${baseFileName}.md`);
+
+		let estimateFileName = path.join(process.cwd(), `stima_${safeFileName}.md`);
+		let sprintsFileName = path.join(
+			process.cwd(),
+			`sprints_${safeFileName}.md`,
+		);
 		let counter = 1;
 
-		// Trova un nome file unico
+		// Trova un nome file unico (basato sulla stima principale)
 		while (true) {
 			try {
-				await fs.access(fileName, fs.constants.F_OK); // Controlla se le file esiste
-				// Se il file esiste, prova il prossimo nome
-				fileName = path.join(process.cwd(), `${baseFileName}_${counter}.md`);
+				await fs.access(estimateFileName, constants.F_OK);
+				// Se il file esiste, prova il prossimo nome per entrambi
+				estimateFileName = path.join(
+					process.cwd(),
+					`stima_${safeFileName}_${counter}.md`,
+				);
+				sprintsFileName = path.join(
+					process.cwd(),
+					`sprints_${safeFileName}_${counter}.md`,
+				);
 				counter++;
 			} catch (_e) {
-				// Se il file non esiste (errore), allora il nome è unico
 				break;
 			}
 		}
 
-		// Scrittura del file Markdown
-		await fs.writeFile(fileName, markdownOutput);
+		// Scrittura dei file Markdown
+		await fs.writeFile(estimateFileName, markdownOutput);
+		if (sprintsOutput) {
+			await fs.writeFile(sprintsFileName, sprintsOutput);
+		}
 
-		console.log(
-			`\nStima completata con successo! Il file è stato salvato come: ${fileName}`,
-		);
+		console.log('\nStima completata con successo!');
+		console.log(`File stima: ${estimateFileName}`);
+		if (sprintsOutput) {
+			console.log(`File sprint: ${sprintsFileName}`);
+		}
 	} catch (error) {
 		console.error(
 			`\n[ERRORE] Si è verificato un problema durante la generazione della stima con ${answers.llmChoice}:`,

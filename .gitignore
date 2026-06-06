@@ -5,6 +5,8 @@
 
 stima_*.md
 stima_history.json
+stima_history.json.bak
+stima_history.db
 
 /frontend
 /backend

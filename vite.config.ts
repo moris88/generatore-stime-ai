@@ -24,7 +24,13 @@ export default defineConfig({
 		emptyOutDir: true, // Clear the dist directory before building
 		rollupOptions: {
 			// Externalize dependencies that should not be bundled
-			external: ['inquirer', 'dotenv', '@google/generative-ai', 'fs/promises'],
+			external: [
+				'inquirer',
+				'dotenv',
+				'@google/generative-ai',
+				'fs/promises',
+				'better-sqlite3',
+			],
 			output: {
 				// Ensure that external dependencies are not included in the bundle
 				// and are properly imported as CommonJS modules.
