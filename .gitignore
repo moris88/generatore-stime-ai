@@ -3,6 +3,7 @@
 /.env
 /.npmrc
 
+sprints_*.md
 stima_*.md
 stima_history.json
 stima_history.json.bak
